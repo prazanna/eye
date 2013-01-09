@@ -1,0 +1,14 @@
+{
+  "type": "request1",
+  "time": "2001-07-04T12:08:56.235-0700",
+  "data": {
+    "path": "/cube/",
+    "duration": 362,
+    "status": 200,
+    "browser": {
+      "os": "Mac",
+      "name": "Safari",
+      "version": 6
+    }
+  }
+}
