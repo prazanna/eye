@@ -1,7 +1,9 @@
 package com.prasanna.eye.storage;
 
-import com.prasanna.eye.model.TimedEvent;
+import java.util.List;
+import com.prasanna.eye.query.model.QueryModel;
 
-public interface EventStorage {
-  boolean storeEvents(TimedEvent... timedEvents);
+public interface EventStorage<T> {
+  void storeEvents(T... timedEvents);
+  List<T> queryEvents(QueryModel eventQueryModel);
 }

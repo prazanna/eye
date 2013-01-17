@@ -1,16 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:task="http://www.springframework.org/schema/task"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-       http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
 
-  <context:component-scan base-package="com.prasanna.eye.buffer"/>
-  <context:component-scan base-package="com.prasanna.eye.storage"/>
+  <bean id="eventController" class="com.prasanna.eye.http.controller.EventController">
+    <property name="eventSearch" ref="eventQueryParser"/>
+    <property name="eventStorage" ref="defaultEventStorage"/>
+  </bean>
 
-  <bean id="switchEventBuffer" class="com.prasanna.eye.buffer.EventSwitchBuffer">
+  <bean id="eventQueryParser" class="com.prasanna.eye.query.EventQueryParser"/>
+  <bean id="defaultEventStorage" class="com.prasanna.eye.storage.DefaultEventStorage">
+    <property name="permanentStorage" ref="hbaseEventStorage"/>
+    <property name="fastWriteBuffer" ref="switchEventBuffer"/>
+  </bean>
+
+  <bean id="timedEventBuffer" class="com.prasanna.eye.storage.buffer.TimedEventBuffer" scope="prototype"
+        init-method="init" destroy-method="cleanup"/>
+
+  <task:scheduled-tasks scheduler="myScheduler">
+    <task:scheduled ref="defaultEventStorage" method="startEventScanning" fixed-rate="60000"/>
+  </task:scheduled-tasks>
+
+  <task:scheduler id="myScheduler" pool-size="10"/>
+
+  <bean id="switchEventBuffer" class="com.prasanna.eye.storage.buffer.EventSwitchBuffer">
     <property name="primaryBuffer" ref="timedEventBuffer"/>
     <property name="secondaryBuffer" ref="timedEventBuffer"/>
   </bean>
+
+  <bean id="hbaseEventStorage" class="com.prasanna.eye.storage.db.hbase.HBaseEventStorage" init-method="init">
+    <property name="filter" ref="hbaseEventDefaultFilter"/>
+  </bean>
+
+  <bean id="hbaseEventDefaultFilter" class="com.prasanna.eye.storage.db.hbase.filters.HBaseEventDefaultFilter"/>
 
 </beans>

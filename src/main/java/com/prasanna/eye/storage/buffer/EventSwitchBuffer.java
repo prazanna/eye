@@ -1,7 +1,13 @@
-package com.prasanna.eye.buffer;
+package com.prasanna.eye.storage.buffer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
+import java.util.List;
+import com.google.common.collect.Lists;
+import com.prasanna.eye.query.model.QueryModel;
 
 public class EventSwitchBuffer<T> implements EventBuffer<T>{
   private EventBuffer<T> primaryBuffer;
@@ -16,13 +22,16 @@ public class EventSwitchBuffer<T> implements EventBuffer<T>{
     this.secondaryBuffer = secondaryBuffer;
   }
 
-  @Override
-  public void offer(final T event) {
-    this.primaryBuffer.offer(event);
+  public synchronized void storeEvents(final T... event) {
+    this.primaryBuffer.storeEvents(event);
   }
 
   @Override
-  public T[] flip() {
+  public List<T> queryEvents(final QueryModel eventQueryModel) {
+    return Lists.newArrayList();
+  }
+
+  public synchronized T[] flip() {
     if(secondaryBuffer.getDrainFlag()) {
       log.info("Secondary buffer is not drained yet, Returning secondary data");
       return secondaryBuffer.flip();
@@ -35,12 +44,10 @@ public class EventSwitchBuffer<T> implements EventBuffer<T>{
     return events;
   }
 
-  @Override
-  public void drain() {
+  public synchronized void drain() {
     secondaryBuffer.drain();
   }
 
-  @Override
   public Boolean getDrainFlag() {
     return primaryBuffer.getDrainFlag();
   }

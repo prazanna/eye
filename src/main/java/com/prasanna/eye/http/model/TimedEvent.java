@@ -1,4 +1,4 @@
-package com.prasanna.eye.model;
+package com.prasanna.eye.http.model;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -57,7 +57,6 @@ public class TimedEvent implements Serializable {
     return "TimedEvent{" +
         "type='" + type + '\'' +
         ", time=" + time +
-        ", data=" + data +
         '}';
   }
 

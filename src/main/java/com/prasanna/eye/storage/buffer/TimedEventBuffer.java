@@ -1,13 +1,9 @@
-package com.prasanna.eye.buffer;
+package com.prasanna.eye.storage.buffer;
 
 import org.apache.commons.collections.BufferOverflowException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -15,17 +11,15 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.List;
 import com.google.common.collect.Lists;
-import com.prasanna.eye.model.TimedEvent;
+import com.prasanna.eye.http.model.TimedEvent;
+import com.prasanna.eye.query.model.QueryModel;
 
-@Component
-@Scope("prototype")
 public class TimedEventBuffer implements EventBuffer<TimedEvent> {
   private volatile Boolean drainFlag = Boolean.FALSE;
   private FileChannel fileChannel;
   private Logger log = LoggerFactory.getLogger(TimedEventBuffer.class);
   File bufferFile;
 
-  @PostConstruct
   private void init() {
     try {
       bufferFile = File.createTempFile("eye", "event.buffer");
@@ -38,7 +32,6 @@ public class TimedEventBuffer implements EventBuffer<TimedEvent> {
     }
   }
 
-  @PreDestroy
   private void cleanup() {
     if(bufferFile.exists()) {
       //noinspection ResultOfMethodCallIgnored
@@ -46,13 +39,11 @@ public class TimedEventBuffer implements EventBuffer<TimedEvent> {
     }
   }
 
-  @Override
   public Boolean getDrainFlag() {
     return drainFlag;
   }
 
-  @Override
-  public void offer(final TimedEvent timedEvent) {
+  public void storeEvents(final TimedEvent... timedEvents) {
     if (drainFlag) {
       throw new BufferOverflowException();
     }
@@ -61,18 +52,24 @@ public class TimedEventBuffer implements EventBuffer<TimedEvent> {
       if (drainFlag) {
         throw new BufferOverflowException();
       }
-      try {
-        byte[] eventData =  ObjectSerializer.serialize(timedEvent);
-        fileChannel.write(ByteBuffer.wrap(Bytes.toBytes(eventData.length)));
-        fileChannel.write(ByteBuffer.wrap(eventData));
-        log.info("TimedEvent of type " + timedEvent.getType() + " persisted!");
-      } catch (IOException e) {
-        throw new BufferException(e);
+      for(TimedEvent timedEvent:timedEvents) {
+        try {
+          byte[] eventData =  ObjectSerializer.serialize(timedEvent);
+          fileChannel.write(ByteBuffer.wrap(Bytes.toBytes(eventData.length)));
+          fileChannel.write(ByteBuffer.wrap(eventData));
+          log.info("TimedEvent of type " + timedEvent.getType() + " persisted!");
+        } catch (IOException e) {
+          throw new BufferException(e);
+        }
       }
     }
   }
 
   @Override
+  public List<TimedEvent> queryEvents(final QueryModel eventQueryModel) {
+    return Lists.newArrayList();
+  }
+
   public synchronized TimedEvent[] flip() {
     List<TimedEvent> result = Lists.newArrayList();
     try {
@@ -101,7 +98,6 @@ public class TimedEventBuffer implements EventBuffer<TimedEvent> {
     }
   }
 
-  @Override
   public synchronized void drain() {
     try {
       fileChannel.position(0);

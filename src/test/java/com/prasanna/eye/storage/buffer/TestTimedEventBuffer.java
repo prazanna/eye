@@ -1,4 +1,4 @@
-package com.prasanna.eye.buffer;
+package com.prasanna.eye.storage.buffer;
 
 import org.apache.commons.collections.BufferOverflowException;
 import org.codehaus.jackson.JsonFactory;
@@ -13,7 +13,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.io.IOException;
 import java.text.ParseException;
-import com.prasanna.eye.model.TimedEvent;
+import com.prasanna.eye.http.model.TimedEvent;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -39,8 +39,8 @@ public class TestTimedEventBuffer {
 
   @Test
   public void testBufferInsert() {
-    defaultEventBuffer.offer(timedEvent1);
-    defaultEventBuffer.offer(timedEvent2);
+    defaultEventBuffer.storeEvents(timedEvent1);
+    defaultEventBuffer.storeEvents(timedEvent2);
     TimedEvent[] result = defaultEventBuffer.flip();
     assertEquals(result.length, 2);
     assertEquals(result[0], timedEvent1);
@@ -49,22 +49,22 @@ public class TestTimedEventBuffer {
 
   @Test(expected = BufferOverflowException.class)
   public void testBufferFlip() {
-    defaultEventBuffer.offer(timedEvent1);
+    defaultEventBuffer.storeEvents(timedEvent1);
     TimedEvent[] result = defaultEventBuffer.flip();
     assertEquals(result.length, 1);
-    defaultEventBuffer.offer(timedEvent1);
+    defaultEventBuffer.storeEvents(timedEvent1);
   }
 
   @Test
   public void testBufferClear() {
-    defaultEventBuffer.offer(timedEvent1);
-    defaultEventBuffer.offer(timedEvent2);
+    defaultEventBuffer.storeEvents(timedEvent1);
+    defaultEventBuffer.storeEvents(timedEvent2);
     TimedEvent[] result = defaultEventBuffer.flip();
     assertEquals(result.length, 2);
     defaultEventBuffer.drain();
     assertEquals(defaultEventBuffer.bufferFile.length(), 0);
-    defaultEventBuffer.offer(timedEvent1);
-    defaultEventBuffer.offer(timedEvent2);
+    defaultEventBuffer.storeEvents(timedEvent1);
+    defaultEventBuffer.storeEvents(timedEvent2);
     result = defaultEventBuffer.flip();
     assertEquals(result.length, 2);
   }

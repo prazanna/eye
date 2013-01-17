@@ -1,4 +1,4 @@
-package com.prasanna.eye.buffer;
+package com.prasanna.eye.storage.buffer;
 
 import org.apache.commons.collections.BufferOverflowException;
 import org.codehaus.jackson.JsonFactory;
@@ -15,7 +15,9 @@ import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.io.IOException;
 import java.text.ParseException;
-import com.prasanna.eye.model.TimedEvent;
+import com.prasanna.eye.http.model.TimedEvent;
+import com.prasanna.eye.storage.buffer.EventSwitchBuffer;
+import com.prasanna.eye.storage.buffer.TimedEventBuffer;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -47,8 +49,8 @@ public class TestEventSwitchBuffer extends AbstractJUnit4SpringContextTests {
 
   @Test
   public void testBufferInsert() {
-    eventBuffer.offer(timedEvent1);
-    eventBuffer.offer(timedEvent2);
+    eventBuffer.storeEvents(timedEvent1);
+    eventBuffer.storeEvents(timedEvent2);
     TimedEvent[] result = eventBuffer.flip();
     assertEquals(result.length, 2);
     assertEquals(result[0], timedEvent1);
@@ -57,37 +59,37 @@ public class TestEventSwitchBuffer extends AbstractJUnit4SpringContextTests {
 
   @Test
   public void testBufferFlip() {
-    eventBuffer.offer(timedEvent1);
-    eventBuffer.offer(timedEvent2);
+    eventBuffer.storeEvents(timedEvent1);
+    eventBuffer.storeEvents(timedEvent2);
     TimedEvent[] result = eventBuffer.flip();
     assertEquals(result.length, 2);
-    eventBuffer.offer(timedEvent1);
-    eventBuffer.offer(timedEvent2);
+    eventBuffer.storeEvents(timedEvent1);
+    eventBuffer.storeEvents(timedEvent2);
     result = eventBuffer.flip();
     assertEquals(result.length, 2);
   }
 
   @Test(expected = BufferOverflowException.class)
   public void testBufferDoubleFlip() {
-    eventBuffer.offer(timedEvent1);
+    eventBuffer.storeEvents(timedEvent1);
     TimedEvent[] result = eventBuffer.flip();
     assertEquals(result.length, 1);
-    eventBuffer.offer(timedEvent2);
+    eventBuffer.storeEvents(timedEvent2);
     result = eventBuffer.flip();
     assertEquals(result.length, 1);
-    eventBuffer.offer(timedEvent1);
+    eventBuffer.storeEvents(timedEvent1);
   }
 
   @Test
   public void testFlipClearFlip() {
-    eventBuffer.offer(timedEvent1);
+    eventBuffer.storeEvents(timedEvent1);
     TimedEvent[] result = eventBuffer.flip();
     assertEquals(result.length, 1);
-    eventBuffer.offer(timedEvent2);
+    eventBuffer.storeEvents(timedEvent2);
     eventBuffer.drain();
     result = eventBuffer.flip();
     assertEquals(result.length, 1);
-    eventBuffer.offer(timedEvent1);
+    eventBuffer.storeEvents(timedEvent1);
     result = eventBuffer.flip();
     assertEquals(result.length, 1);
   }
