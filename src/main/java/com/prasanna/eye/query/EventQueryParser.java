@@ -21,11 +21,4 @@ public class EventQueryParser {
 			throw new IllegalQueryException(query, e);
 		}
   }
-
-  public static void main(String[] args) {
-    EventQueryParser search = new EventQueryParser();
-    QueryModel result = search.parseEventQuery("request.last(\"4hours\").eq(/\"service\"," +
-        "#\"Cluster\").eq(/\"service\",#\"Cluster\")");
-    System.out.println(result);
-  }
 }

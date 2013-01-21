@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+  <!--<bean id="tableDefinitions" class="java.util.ArrayList">-->
+    <!--<constructor-arg index="0">-->
+      <!--<list>-->
+        <!--<value>events</value>-->
+      <!--</list>-->
+    <!--</constructor-arg>-->
+  <!--</bean>-->
+
+  <!--<bean id="hBaseTestingUtility" class="com.prasanna.eye.storage.db.hbase.HBaseTestUtils"-->
+        <!--scope="singleton" factory-method="setupHbase" destroy-method="shutdownMiniCluster">-->
+    <!--<constructor-arg index="0" ref="tableDefinitions" />-->
+  <!--</bean>-->
+
+  <!--<bean id="hbaseConfiguration" factory-bean="hBaseTestingUtility"-->
+        <!--factory-method="getConfiguration" />-->
+
+  <bean id="pool" class="com.prasanna.eye.storage.db.hbase.MockHTablePool" name="test-pool"/>
+
+</beans>

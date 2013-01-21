@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+  <bean id="hbaseConfiguration" class="org.apache.hadoop.hbase.HBaseConfiguration" factory-method="create"/>
+  <bean id="pool" class="org.apache.hadoop.hbase.client.HTablePool">
+    <constructor-arg index="0" ref="hbaseConfiguration"/>
+    <constructor-arg index="1" value="3"/>
+  </bean>
+
+</beans>

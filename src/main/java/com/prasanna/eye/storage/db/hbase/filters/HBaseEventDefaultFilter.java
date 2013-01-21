@@ -5,17 +5,17 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Iterator;
+import java.util.List;
 import com.jayway.jsonpath.JsonPath;
 import com.prasanna.eye.http.model.TimedEvent;
 import com.prasanna.eye.query.IllegalQueryException;
 import com.prasanna.eye.query.model.PredicateProperty;
 import com.prasanna.eye.query.model.PredicateValue;
-import com.prasanna.eye.query.model.QueryModel;
 import com.prasanna.eye.query.model.QueryPredicateModel;
 import com.prasanna.eye.storage.EventFilter;
 
@@ -23,20 +23,32 @@ public class HBaseEventDefaultFilter implements EventFilter<Scan, TimedEvent> {
   private static ObjectMapper objectMapper = new ObjectMapper();
   private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss z");
 
-  public void applyRowFilters(final Scan scan, final QueryModel eventQueryModel) {
-    for (QueryPredicateModel predicate : eventQueryModel.getPredicates()) {
+  public void applyRowFilters(final Scan scan, final List<QueryPredicateModel> predicateModels) {
+    if (predicateModels.isEmpty()) {
+      return;
+    }
+
+    Iterator<QueryPredicateModel> predicateIterator = predicateModels.iterator();
+    while (predicateIterator.hasNext()) {
+      QueryPredicateModel predicate = predicateIterator.next();
       switch (predicate.getFunction()) {
         case within:
           WithinFunctionFilter.applyFilter(predicate, scan);
+          predicateIterator.remove();
           break;
         case last:
           LastFunctionFilter.applyFilter(predicate, scan);
+          predicateIterator.remove();
       }
     }
   }
 
   public boolean applyDataFilters(final TimedEvent timedEvent,
-                                  final QueryModel eventQueryModel) {
+                                  final List<QueryPredicateModel> predicateModels) {
+    if(predicateModels.isEmpty()) {
+      return true;
+    }
+
     JsonNode dataJson;
     try {
       dataJson = objectMapper.readTree(timedEvent.getData());
@@ -44,23 +56,25 @@ public class HBaseEventDefaultFilter implements EventFilter<Scan, TimedEvent> {
       throw new InternalError("Error while trying to convert timed event data to Json " + e.toString());
     }
 
-
-    for (QueryPredicateModel predicateModel : eventQueryModel.getPredicates()) {
+    Iterator<QueryPredicateModel> predicateIterator = predicateModels.iterator();
+    while (predicateIterator.hasNext()) {
+      QueryPredicateModel predicate = predicateIterator.next();
       boolean filterResult;
-      switch (predicateModel.getFunction()) {
+      switch (predicate.getFunction()) {
         case eq:
-          filterResult = EqualFunctionFilter.applyFilter(dataJson,
-              predicateModel);
+          filterResult = EqualFunctionFilter.applyFilter(dataJson, predicate);
+          predicateIterator.remove();
           break;
         case re:
-          filterResult = REFunctionFilter.applyFilter(dataJson,
-              predicateModel);
+          filterResult = REFunctionFilter.applyFilter(dataJson, predicate);
+          predicateIterator.remove();
           break;
         default:
-          throw new NotImplementedException("Predicate model " + predicateModel.getFunction() + " is not yet implemented for HBase storage");
+          throw new NotImplementedException("Predicate model " + predicate.getFunction() + " is not yet implemented " +
+              "for HBase storage");
 
       }
-      if(filterResult) {
+      if (filterResult) {
         return true;
       }
     }
@@ -76,7 +90,8 @@ public class HBaseEventDefaultFilter implements EventFilter<Scan, TimedEvent> {
       try {
         from = dateFormat.parse((String) property.getProperty()).getTime();
       } catch (ParseException e) {
-        throw new IllegalQueryException("Could not parse within property to a date " + property.getProperty()+", format expected is " + dateFormat.toPattern(), e);
+        throw new IllegalQueryException("Could not parse within property to a date " + property.getProperty() + ", " +
+            "format expected is " + dateFormat.toPattern(), e);
       }
 
       PredicateValue predicateValue = predicateModel.getPredicateValue();
@@ -86,19 +101,20 @@ public class HBaseEventDefaultFilter implements EventFilter<Scan, TimedEvent> {
       try {
         to = dateFormat.parse((String) predicateValue.getValue()).getTime();
       } catch (ParseException e) {
-        throw new IllegalQueryException("Could not parse within value to a date " + property.getProperty()+", format expected is " + dateFormat.toPattern(), e);
+        throw new IllegalQueryException("Could not parse within value to a date " + property.getProperty() + ", " +
+            "format expected is " + dateFormat.toPattern(), e);
       }
 
       long alreadySetStart = Bytes.toLong(scan.getStartRow());
       long revFrom = Long.MAX_VALUE - from;
       long revTo = Long.MAX_VALUE - to;
 
-      if(revFrom > alreadySetStart) {
-        scan.setStartRow(Bytes.toBytes(revFrom));
+      if (revTo > alreadySetStart) {
+        scan.setStartRow(Bytes.toBytes(revTo));
       }
       long alreadySetEnd = Bytes.toLong(scan.getStopRow());
-      if(revTo < alreadySetEnd) {
-        scan.setStopRow(Bytes.toBytes(revTo));
+      if (revFrom < alreadySetEnd) {
+        scan.setStopRow(Bytes.toBytes(revFrom));
       }
     }
   }

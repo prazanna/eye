@@ -1,7 +1,5 @@
 package com.prasanna.eye.storage.db.hbase;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
@@ -14,11 +12,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import com.google.common.collect.Lists;
 import com.prasanna.eye.http.model.TimedEvent;
 import com.prasanna.eye.query.model.QueryModel;
+import com.prasanna.eye.query.model.QueryPredicateModel;
 import com.prasanna.eye.storage.EventStorage;
 import com.prasanna.eye.storage.buffer.ObjectSerializer;
 import com.prasanna.eye.storage.db.StorageException;
@@ -34,12 +35,11 @@ public class HBaseEventStorage implements EventStorage<TimedEvent> {
     this.filter = filter;
   }
 
-  public void init() {
-    Configuration config = HBaseConfiguration.create();
-    config.set("hbase.zookeeper.quorum", "m0106.mtv.cloudera.com");
-    config.set("hbase.zookeeper.property.clientPort", "2181");
+  public void sethTablePool(final HTablePool hTablePool) {
+    this.hTablePool = hTablePool;
+  }
 
-    hTablePool = new HTablePool(config, 3);
+  public void init() {
     hTablePool.putTable(hTablePool.getTable("eye_events"));
   }
 
@@ -50,43 +50,52 @@ public class HBaseEventStorage implements EventStorage<TimedEvent> {
       put.add(EVENTS_CF, Bytes.toBytes(te.getType()), ObjectSerializer.serialize(te));
       puts.add(put);
     }
+    HTableInterface eventsTable = hTablePool.getTable("eye_events");
     try {
-      hTablePool.getTable("eye_events").put(puts);
-      log.info("Stored " + puts.size()+" events into hbase");
+      eventsTable.put(puts);
+      log.info("Stored " + puts.size() + " events into hbase");
     } catch (IOException e) {
       try {
-        hTablePool.getTable("eye_events").flushCommits();
+        eventsTable.flushCommits();
       } catch (IOException ex) {
         // ignore. we will be throwing a storage exception
       }
       throw new StorageException();
+    } finally {
+      hTablePool.putTable(eventsTable);
     }
   }
 
   @Override
   public List<TimedEvent> queryEvents(final QueryModel eventQueryModel) {
     HTableInterface table = hTablePool.getTable("eye_events");
-    Scan scan = new Scan();
-    scan.setStartRow(Bytes.toBytes(0L));
-    scan.setStopRow(Bytes.toBytes(Long.MAX_VALUE));
-    filter.applyRowFilters(scan, eventQueryModel);
-    ResultScanner results;
     try {
-      results = table.getScanner(scan);
-    } catch (IOException e) {
-      throw new StorageException();
-    }
+      Scan scan = new Scan();
+      List<QueryPredicateModel> filters = Lists.newArrayList(eventQueryModel.getPredicates());
+      scan.setStartRow(Bytes.toBytes(0L));
+      scan.setStopRow(Bytes.toBytes(Long.MAX_VALUE));
+      filter.applyRowFilters(scan, filters);
+      ResultScanner results;
+      try {
+        results = table.getScanner(scan);
+      } catch (IOException e) {
+        throw new StorageException();
+      }
 
-    Iterator<Result> iterator = results.iterator();
-    List<TimedEvent> timedEvents = Lists.newArrayList();
-    while (iterator.hasNext()) {
-      Result result = iterator.next();
-      KeyValue dbResult = result.getColumnLatest(EVENTS_CF, Bytes.toBytes(eventQueryModel.getEventType()));
-      TimedEvent timedEvent = ObjectSerializer.deSerialize(ByteBuffer.wrap(dbResult.getValue()), TimedEvent.class);
-      boolean filterResult = filter.applyDataFilters(timedEvent, eventQueryModel);
-      if(filterResult)
-        timedEvents.add(timedEvent);
+      Iterator<Result> iterator = results.iterator();
+      List<TimedEvent> timedEvents = Lists.newArrayList();
+      while (iterator.hasNext()) {
+        Result result = iterator.next();
+        KeyValue dbResult = result.getColumnLatest(EVENTS_CF, Bytes.toBytes(eventQueryModel.getEventType()));
+        TimedEvent timedEvent = ObjectSerializer.deSerialize(ByteBuffer.wrap(dbResult.getValue()), TimedEvent.class);
+        boolean filterResult = filter.applyDataFilters(timedEvent, filters);
+        if (filterResult) {
+          timedEvents.add(timedEvent);
+        }
+      }
+      return timedEvents;
+    } finally {
+      hTablePool.putTable(table);
     }
-    return timedEvents;
   }
 }

@@ -1,6 +1,5 @@
 package com.prasanna.eye.storage.buffer;
 
-import org.apache.commons.collections.BufferOverflowException;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
@@ -9,23 +8,25 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.kubek2k.springockito.annotations.SpringockitoContextLoader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.io.IOException;
 import java.text.ParseException;
 import com.prasanna.eye.http.model.TimedEvent;
-import com.prasanna.eye.storage.buffer.EventSwitchBuffer;
-import com.prasanna.eye.storage.buffer.TimedEventBuffer;
 
 import static junit.framework.Assert.assertEquals;
 
-@ContextConfiguration("classpath:/spring/eye-beans.xml")
+@ContextConfiguration(loader = SpringockitoContextLoader.class,
+    locations = {"classpath:/spring/eye-beans.xml", "classpath:/spring/eye-hbase-test-beans.xml"})
 @RunWith(SpringJUnit4ClassRunner.class)
+@DirtiesContext
 public class TestEventSwitchBuffer extends AbstractJUnit4SpringContextTests {
   @Autowired
-  private EventSwitchBuffer<TimedEvent> eventBuffer;
+  private EventSwitchBuffer<TimedEvent> switchEventBuffer;
   private static TimedEvent timedEvent1;
   private static TimedEvent timedEvent2;
 
@@ -43,15 +44,15 @@ public class TestEventSwitchBuffer extends AbstractJUnit4SpringContextTests {
 
   @Before
   public void setUp() {
-    eventBuffer.setPrimaryBuffer(applicationContext.getBean(TimedEventBuffer.class));
-    eventBuffer.setSecondaryBuffer(applicationContext.getBean(TimedEventBuffer.class));
+    switchEventBuffer.setPrimaryBuffer(applicationContext.getBean(TimedEventBuffer.class));
+    switchEventBuffer.setSecondaryBuffer(applicationContext.getBean(TimedEventBuffer.class));
   }
 
   @Test
   public void testBufferInsert() {
-    eventBuffer.storeEvents(timedEvent1);
-    eventBuffer.storeEvents(timedEvent2);
-    TimedEvent[] result = eventBuffer.flip();
+    switchEventBuffer.storeEvents(timedEvent1);
+    switchEventBuffer.storeEvents(timedEvent2);
+    TimedEvent[] result = switchEventBuffer.flip();
     assertEquals(result.length, 2);
     assertEquals(result[0], timedEvent1);
     assertEquals(result[1], timedEvent2);
@@ -59,38 +60,42 @@ public class TestEventSwitchBuffer extends AbstractJUnit4SpringContextTests {
 
   @Test
   public void testBufferFlip() {
-    eventBuffer.storeEvents(timedEvent1);
-    eventBuffer.storeEvents(timedEvent2);
-    TimedEvent[] result = eventBuffer.flip();
+    switchEventBuffer.storeEvents(timedEvent1);
+    switchEventBuffer.storeEvents(timedEvent2);
+    TimedEvent[] result = switchEventBuffer.flip();
     assertEquals(result.length, 2);
-    eventBuffer.storeEvents(timedEvent1);
-    eventBuffer.storeEvents(timedEvent2);
-    result = eventBuffer.flip();
+    switchEventBuffer.storeEvents(timedEvent1);
+    switchEventBuffer.storeEvents(timedEvent2);
+    result = switchEventBuffer.flip();
     assertEquals(result.length, 2);
   }
 
-  @Test(expected = BufferOverflowException.class)
+  @Test
+  /**
+   * When I double flip the buffer, it should realize the old buffer is not drained yet
+   * and it should return the old set of events
+   */
   public void testBufferDoubleFlip() {
-    eventBuffer.storeEvents(timedEvent1);
-    TimedEvent[] result = eventBuffer.flip();
-    assertEquals(result.length, 1);
-    eventBuffer.storeEvents(timedEvent2);
-    result = eventBuffer.flip();
-    assertEquals(result.length, 1);
-    eventBuffer.storeEvents(timedEvent1);
+    switchEventBuffer.storeEvents(timedEvent1);
+    TimedEvent[] result1 = switchEventBuffer.flip();
+    assertEquals(result1.length, 1);
+    switchEventBuffer.storeEvents(timedEvent2);
+    TimedEvent[] result2 = switchEventBuffer.flip();
+    assertEquals(result1.length, 1);
+    assertEquals(result2[0], timedEvent1);
   }
 
   @Test
   public void testFlipClearFlip() {
-    eventBuffer.storeEvents(timedEvent1);
-    TimedEvent[] result = eventBuffer.flip();
+    switchEventBuffer.storeEvents(timedEvent1);
+    TimedEvent[] result = switchEventBuffer.flip();
     assertEquals(result.length, 1);
-    eventBuffer.storeEvents(timedEvent2);
-    eventBuffer.drain();
-    result = eventBuffer.flip();
+    switchEventBuffer.storeEvents(timedEvent2);
+    switchEventBuffer.drain();
+    result = switchEventBuffer.flip();
     assertEquals(result.length, 1);
-    eventBuffer.storeEvents(timedEvent1);
-    result = eventBuffer.flip();
+    switchEventBuffer.storeEvents(timedEvent1);
+    result = switchEventBuffer.flip();
     assertEquals(result.length, 1);
   }
 

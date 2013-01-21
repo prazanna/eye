@@ -9,17 +9,13 @@
         <webroots>
           <root url="file://$MODULE_DIR$/src/main/webapp" relative="/" />
         </webroots>
-        <sourceRoots>
-          <root url="file://$MODULE_DIR$/target/generated-sources/src/main/java" />
-          <root url="file://$MODULE_DIR$/src/main/java" />
-          <root url="file://$MODULE_DIR$/src/main/resources" />
-        </sourceRoots>
       </configuration>
     </facet>
     <facet type="Spring" name="Spring">
       <configuration>
         <fileset id="fileset1" name="XML Application Context" removed="false">
-          <file>file://$MODULE_DIR$/src/main/webapp/WEB-INF/mvc-dispatcher-servlet.xml</file>
+          <file>file://$MODULE_DIR$/src/main/resources/spring/eye-hbase-beans.xml</file>
+          <file>file://$MODULE_DIR$/src/main/resources/spring/eye-beans.xml</file>
         </fileset>
       </configuration>
     </facet>
@@ -34,7 +30,8 @@
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/resources" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target/classes" />
-      <excludeFolder url="file://$MODULE_DIR$/target/eye" />
+      <excludeFolder url="file://$MODULE_DIR$/target/surefire" />
+      <excludeFolder url="file://$MODULE_DIR$/target/surefire-reports" />
       <excludeFolder url="file://$MODULE_DIR$/target/test-classes" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -96,7 +93,6 @@
     <orderEntry type="library" name="Maven: tomcat:jasper-runtime:5.5.23" level="project" />
     <orderEntry type="library" name="Maven: commons-el:commons-el:1.0" level="project" />
     <orderEntry type="library" name="Maven: tomcat:jasper-compiler:5.5.23" level="project" />
-    <orderEntry type="library" name="Maven: javax.servlet:jsp-api:2.0" level="project" />
     <orderEntry type="library" name="Maven: ant:ant:1.6.5" level="project" />
     <orderEntry type="library" name="Maven: asm:asm:3.2" level="project" />
     <orderEntry type="library" name="Maven: com.sun.jersey:jersey-core:1.8" level="project" />
@@ -108,20 +104,21 @@
     <orderEntry type="library" name="Maven: javax.activation:activation:1.1" level="project" />
     <orderEntry type="library" name="Maven: org.codehaus.jackson:jackson-xc:1.8.8" level="project" />
     <orderEntry type="library" name="Maven: com.sun.jersey:jersey-server:1.8" level="project" />
-    <orderEntry type="library" name="Maven: javax.servlet.jsp:jsp-api:2.1" level="project" />
     <orderEntry type="library" name="Maven: org.apache.avro:avro-ipc:1.5.4" level="project" />
     <orderEntry type="library" name="Maven: org.jboss.netty:netty:3.2.4.Final" level="project" />
     <orderEntry type="library" name="Maven: org.apache.zookeeper:zookeeper:3.3.5-cdh3u5" level="project" />
     <orderEntry type="library" name="Maven: org.apache.thrift:thrift:0.2.0" level="project" />
     <orderEntry type="library" name="Maven: org.jruby:jruby-complete:1.6.0" level="project" />
-    <orderEntry type="library" name="Maven: org.mortbay.jetty:jsp-2.1:6.1.14" level="project" />
-    <orderEntry type="library" name="Maven: org.eclipse.jdt:core:3.1.1" level="project" />
-    <orderEntry type="library" name="Maven: org.mortbay.jetty:jsp-api-2.1:6.1.14" level="project" />
-    <orderEntry type="library" name="Maven: org.mortbay.jetty:servlet-api-2.5:6.1.14" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Maven: org.slf4j:slf4j-log4j12:1.5.8" level="project" />
     <orderEntry type="library" name="Maven: org.jamon:jamon-runtime:2.3.1" level="project" />
     <orderEntry type="library" name="Maven: com.google.protobuf:protobuf-java:2.3.0" level="project" />
     <orderEntry type="library" name="Maven: javax.ws.rs:jsr311-api:1.1.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.hbase:hbase:tests:0.90.6-cdh3u5" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.hadoop:hadoop-test:0.20.2-cdh3u0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.ftpserver:ftplet-api:1.0.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.mina:mina-core:2.0.0-M5" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.ftpserver:ftpserver-core:1.0.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.ftpserver:ftpserver-deprecated:1.0.0-M2" level="project" />
     <orderEntry type="library" name="Maven: org.apache.hadoop:hadoop-client:0.20.2-cdh3u5" level="project" />
     <orderEntry type="library" name="Maven: org.antlr:antlr-runtime:3.5" level="project" />
     <orderEntry type="library" name="Maven: org.antlr:stringtemplate:3.2.1" level="project" />
@@ -131,6 +128,7 @@
     <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:1.1" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-test:3.1.1.RELEASE" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.mockito:mockito-all:1.9.5" level="project" />
+    <orderEntry type="library" name="Maven: org.kubek2k:springockito-annotations:1.0.2" level="project" />
   </component>
 </module>
 
